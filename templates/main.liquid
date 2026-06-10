@@ -1,0 +1,14 @@
+{%- comment -%}
+  main.liquid — top-level prompt composition.
+  Each section is an isolated partial. Order matters: identity first,
+  guardrails last so they are the most recent instruction in context.
+{%- endcomment -%}
+{% render 'identity', business: business, agent: agent %}
+
+{% render 'hours', hours: hours, business: business %}
+
+{% render 'routing', routing: routing %}
+
+{% render 'scenarios', scenarios: scenarios, routing: routing %}
+
+{% render 'guardrails', guardrails: guardrails, agent: agent %}

@@ -1,0 +1,26 @@
+<scenario_playbook>
+Match the caller's intent against the scenarios below. Scenarios are listed in PRIORITY ORDER — when multiple could apply, the first listed wins. If nothing matches, fall back to taking a message.
+
+{%- assign ordered = scenarios | sort: "priority" %}
+{%- for s in ordered %}
+<scenario id="{{ s.id }}" priority="{{ s.priority }}"{% if s.onlyDuring and s.onlyDuring != "any" %} active-when="{{ s.onlyDuring }}"{% endif %}>
+Name: {{ s.name }}
+Intent: {{ s.intent }}
+{%- if s.triggers and s.triggers.size > 0 %}
+Example triggers: {% for t in s.triggers %}"{{ t }}"{% unless forloop.last %}; {% endunless %}{% endfor %}
+{%- endif %}
+{%- if s.audience %}
+{%- if s.audience.include %}
+Applies to: {{ s.audience.include }}
+{%- endif %}
+{%- if s.audience.exclude %}
+Does NOT apply to: {{ s.audience.exclude }} — if the caller fits this, choose the next matching scenario instead.
+{%- endif %}
+{%- endif %}
+{%- if s.knowledgeRef %}
+Knowledge source: {{ s.knowledgeRef }}
+{%- endif %}
+{% render 'action', action: s.action, routing: routing %}
+</scenario>
+{%- endfor %}
+</scenario_playbook>

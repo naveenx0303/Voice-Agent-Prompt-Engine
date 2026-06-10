@@ -1,0 +1,97 @@
+{
+  "business": {
+    "name": "Northwind Heating & Air",
+    "industry": "HVAC services",
+    "timezone": "America/Denver",
+    "locations": [
+      { "label": "Dispatch Center", "address": "42 Sample Road, Boulder", "phone": "15550107733" }
+    ]
+  },
+  "agent": {
+    "name": "Cole",
+    "voiceStyle": "concise-efficient",
+    "languages": ["en"],
+    "maxCallMinutes": 6
+  },
+  "hours": {
+    "weekly": {
+      "mon": [{ "open": "07:00", "close": "19:00" }],
+      "tue": [{ "open": "07:00", "close": "19:00" }],
+      "wed": [{ "open": "07:00", "close": "19:00" }],
+      "thu": [{ "open": "07:00", "close": "19:00" }],
+      "fri": [{ "open": "07:00", "close": "19:00" }],
+      "sat": [{ "open": "08:00", "close": "16:00" }],
+      "sun": []
+    },
+    "afterHoursBehavior": "schedule_callback"
+  },
+  "routing": {
+    "contacts": [
+      { "id": "dispatch", "label": "Dispatch Desk", "department": "operations", "availability": "business_hours", "transferStyle": "warm" },
+      { "id": "after_hours_tech", "label": "After-Hours Technician", "department": "field", "availability": "always", "transferStyle": "cold" },
+      { "id": "sales_estimator", "label": "Sales Estimator", "department": "sales", "availability": "weekdays_only", "transferStyle": "warm" }
+    ],
+    "fallbackChain": ["dispatch", "after_hours_tech"]
+  },
+  "scenarios": [
+    {
+      "id": "no_heat_emergency",
+      "name": "No-Heat / No-Cool Emergency",
+      "intent": "Caller's heating or cooling is fully out, with vulnerable occupants or extreme weather.",
+      "priority": 1,
+      "triggers": ["our heat is completely out", "AC died and it's 105 outside"],
+      "action": {
+        "type": "escalate",
+        "severity": "emergency",
+        "instructions": "Confirm address and whether anyone vulnerable is in the home, then cold-transfer to the after-hours technician."
+      }
+    },
+    {
+      "id": "service_call_booking",
+      "name": "Book a Service Call",
+      "intent": "Caller needs a repair or maintenance visit that is not an emergency.",
+      "priority": 10,
+      "triggers": ["furnace is making a noise", "schedule a tune-up"],
+      "onlyDuring": "open",
+      "action": {
+        "type": "schedule_appointment",
+        "calendarRef": "cal/service-van-routes",
+        "durationMinutes": 90,
+        "bufferMinutes": 30
+      }
+    },
+    {
+      "id": "new_system_quote",
+      "name": "New System Quote",
+      "intent": "Caller wants pricing or a quote for a new furnace, AC, or heat pump install.",
+      "priority": 15,
+      "triggers": ["how much is a new furnace", "quote for a heat pump"],
+      "audience": { "exclude": "tenants — quotes go to property owners only" },
+      "onlyDuring": "open",
+      "knowledgeRef": "kb/install-financing",
+      "action": {
+        "type": "transfer",
+        "contactId": "sales_estimator"
+      }
+    },
+    {
+      "id": "maintenance_plan_info",
+      "name": "Maintenance Plan Info",
+      "intent": "Caller asks about the annual maintenance membership.",
+      "priority": 25,
+      "triggers": ["tell me about your maintenance plan"],
+      "action": {
+        "type": "send_followup",
+        "channel": "sms",
+        "resourceUrl": "https://example.com/comfort-plan"
+      }
+    }
+  ],
+  "guardrails": {
+    "prohibitedTopics": ["exact repair pricing before a technician diagnosis"],
+    "neverDo": [
+      "Never advise callers to attempt gas line or electrical repairs themselves.",
+      "Never guarantee same-day service without checking the schedule."
+    ]
+  }
+}

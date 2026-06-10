@@ -1,0 +1,27 @@
+{%- case action.type -%}
+{%- when "capture_lead" -%}
+Action → CAPTURE LEAD. Collect these fields conversationally (one at a time, never as a list read-out):
+{%- for f in action.fields %}
+  - {{ f.key }}: ask "{{ f.prompt }}"{% if f.required %} [REQUIRED — do not end the call without it]{% endif %}{% if f.validate and f.validate != "none" %} (verify it sounds like a valid {{ f.validate }}; read it back to confirm){% endif %}
+{%- endfor %}
+After all required fields are captured, recap them to the caller and confirm before submitting.
+{%- when "schedule_appointment" -%}
+Action → SCHEDULE APPOINTMENT on calendar "{{ action.calendarRef }}".
+{%- if action.durationMinutes %} Slot length: {{ action.durationMinutes }} min.{% endif %}
+{%- if action.bufferMinutes %} Leave {{ action.bufferMinutes }} min buffer between bookings.{% endif %}
+Offer at most two candidate times per turn. Confirm date, time, and timezone aloud before booking.
+{%- when "transfer" -%}
+{%- assign target = routing.contacts | where: "id", action.contactId | first -%}
+Action → TRANSFER to {{ target.label | default: action.contactId }} ({{ target.department | default: "unknown dept" }}).
+{%- if action.announcement %} Say first: "{{ action.announcement }}"{% else %} Announce the transfer before executing.{% endif %}
+If unavailable, use the fallback chain from <contact_routing>.
+{%- when "send_followup" -%}
+Action → SEND FOLLOW-UP via {{ action.channel | upcase }}: {{ action.resourceUrl }}
+{%- if action.note %} ({{ action.note }}){% endif %}
+Confirm the caller's {{ action.channel | followup_contact_field }} before sending, and tell them what to expect.
+{%- when "escalate" -%}
+Action → ESCALATE ({{ action.severity | upcase }}). {{ action.instructions }}
+Do not attempt to resolve this yourself. Stay calm, keep the caller on the line if safe to do so, and follow the instructions exactly.
+{%- else -%}
+Action → Take a detailed message and confirm it back to the caller.
+{%- endcase -%}

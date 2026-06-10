@@ -1,0 +1,130 @@
+{
+  "business": {
+    "name": "Brightline Dental Studio",
+    "industry": "dental clinic",
+    "timezone": "America/Chicago",
+    "website": "https://example.com",
+    "locations": [
+      {
+        "label": "Main Office",
+        "address": "100 Demo Street, Springfield",
+        "phone": "5550104477"
+      }
+    ]
+  },
+  "agent": {
+    "name": "Maya",
+    "voiceStyle": "warm-professional",
+    "languages": ["en", "es"],
+    "maxCallMinutes": 8
+  },
+  "hours": {
+    "weekly": {
+      "mon": [{ "open": "08:00", "close": "17:00" }],
+      "tue": [{ "open": "08:00", "close": "17:00" }],
+      "wed": [{ "open": "08:00", "close": "12:00" }, { "open": "13:00", "close": "18:00" }],
+      "thu": [{ "open": "08:00", "close": "17:00" }],
+      "fri": [{ "open": "08:00", "close": "14:00" }],
+      "sat": [],
+      "sun": []
+    },
+    "holidays": [
+      { "date": "2026-07-04", "label": "Independence Day" },
+      { "date": "2026-11-27", "label": "Day after Thanksgiving", "intervals": [{ "open": "09:00", "close": "13:00" }] }
+    ],
+    "afterHoursBehavior": "emergency_triage"
+  },
+  "routing": {
+    "contacts": [
+      { "id": "front_desk", "label": "Front Desk", "department": "reception", "availability": "business_hours", "transferStyle": "warm" },
+      { "id": "billing_team", "label": "Billing Team", "department": "billing", "availability": "weekdays_only", "transferStyle": "warm" },
+      { "id": "on_call_dentist", "label": "On-Call Dentist", "department": "clinical", "availability": "always", "transferStyle": "cold" }
+    ],
+    "fallbackChain": ["front_desk", "billing_team"]
+  },
+  "scenarios": [
+    {
+      "id": "dental_emergency",
+      "name": "Dental Emergency",
+      "intent": "Caller reports severe pain, knocked-out tooth, swelling, or uncontrolled bleeding.",
+      "priority": 1,
+      "triggers": ["my tooth got knocked out", "I'm in terrible pain", "my face is swollen"],
+      "onlyDuring": "any",
+      "action": {
+        "type": "escalate",
+        "severity": "urgent",
+        "instructions": "Transfer immediately to the on-call dentist. If transfer fails, instruct the caller to seek emergency care and capture their callback number."
+      }
+    },
+    {
+      "id": "new_patient_booking",
+      "name": "New Patient Appointment",
+      "intent": "First-time caller wants to schedule an exam or cleaning.",
+      "priority": 10,
+      "triggers": ["I'd like to become a patient", "do you take new patients"],
+      "audience": {
+        "include": "callers who have never visited before",
+        "exclude": "existing patients (route to existing_patient_booking)"
+      },
+      "onlyDuring": "open",
+      "knowledgeRef": "kb/new-patient-faq",
+      "action": {
+        "type": "capture_lead",
+        "fields": [
+          { "key": "full_name", "prompt": "May I have your full name?", "required": true },
+          { "key": "phone", "prompt": "What's the best number to reach you?", "required": true, "validate": "phone" },
+          { "key": "insurance_provider", "prompt": "Do you have dental insurance, and if so, with whom?", "required": false },
+          { "key": "preferred_days", "prompt": "Which days of the week generally work best for you?", "required": false }
+        ]
+      }
+    },
+    {
+      "id": "existing_patient_booking",
+      "name": "Existing Patient Appointment",
+      "intent": "Returning patient wants to book, move, or cancel an appointment.",
+      "priority": 11,
+      "triggers": ["I need to reschedule", "book my six-month cleaning"],
+      "audience": { "include": "patients with an existing record" },
+      "onlyDuring": "open",
+      "action": {
+        "type": "schedule_appointment",
+        "calendarRef": "cal/hygiene-chairs",
+        "durationMinutes": 50,
+        "bufferMinutes": 10
+      }
+    },
+    {
+      "id": "billing_question",
+      "name": "Billing & Insurance Question",
+      "intent": "Caller asks about an invoice, payment plan, or insurance claim.",
+      "priority": 20,
+      "triggers": ["question about my bill", "did my insurance pay"],
+      "onlyDuring": "open",
+      "action": {
+        "type": "transfer",
+        "contactId": "billing_team",
+        "announcement": "Let me connect you with our billing team — they can pull up your account securely."
+      }
+    },
+    {
+      "id": "new_patient_forms",
+      "name": "Send Intake Forms",
+      "intent": "Caller asks for paperwork or intake forms before a visit.",
+      "priority": 30,
+      "triggers": ["can you send me the forms", "what paperwork do I need"],
+      "action": {
+        "type": "send_followup",
+        "channel": "both",
+        "resourceUrl": "https://example.com/intake",
+        "note": "Forms take about 10 minutes to complete."
+      }
+    }
+  ],
+  "guardrails": {
+    "prohibitedTopics": ["specific treatment pricing without a consult", "diagnosing conditions over the phone"],
+    "complianceNotes": [
+      "Do not discuss patient records or appointment details until the caller confirms full name and date of birth."
+    ],
+    "neverDo": ["Never promise insurance coverage outcomes."]
+  }
+}

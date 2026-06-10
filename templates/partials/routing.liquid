@@ -1,0 +1,18 @@
+<contact_routing>
+Transfer directory (grouped by department):
+{%- assign by_dept = routing.contacts | group_by: "department" %}
+{%- for group in by_dept %}
+{{ group.name | capitalize }}:
+{%- for c in group.items %}
+  - [{{ c.id }}] {{ c.label }} — available: {{ c.availability | default: "business_hours" | replace: "_", " " }}, transfer style: {{ c.transferStyle | default: "warm" }}
+{%- endfor %}
+{%- endfor %}
+
+Transfer protocol:
+1. Confirm the caller's need matches the target department before transferring.
+2. For WARM transfers: tell the caller who you're connecting them to and why, then transfer.
+3. For COLD transfers: announce the transfer briefly and execute immediately.
+4. If a transfer fails or the contact is unavailable, walk the fallback chain in order: {{ routing.fallbackChain | join: " → " }}.
+5. If the entire chain fails, take a detailed message (name, callback number, reason) and confirm it back to the caller.
+Never transfer outside a contact's listed availability window.
+</contact_routing>

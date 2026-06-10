@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/voice-agent-config.json",
+  "title": "Voice Agent Business Configuration",
+  "type": "object",
+  "required": ["business", "agent", "hours", "routing", "scenarios"],
+  "additionalProperties": false,
+  "properties": {
+    "business": {
+      "type": "object",
+      "required": ["name", "industry", "timezone"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "industry": { "type": "string" },
+        "timezone": { "type": "string", "description": "IANA timezone, e.g. America/New_York" },
+        "website": { "type": "string", "format": "uri" },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "address"],
+            "properties": {
+              "label": { "type": "string" },
+              "address": { "type": "string" },
+              "phone": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "required": ["name", "voiceStyle"],
+      "properties": {
+        "name": { "type": "string" },
+        "voiceStyle": {
+          "type": "string",
+          "enum": ["warm-professional", "concise-efficient", "friendly-casual", "formal"]
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["en"]
+        },
+        "maxCallMinutes": { "type": "integer", "minimum": 1, "maximum": 60 }
+      }
+    },
+    "hours": {
+      "type": "object",
+      "required": ["weekly", "afterHoursBehavior"],
+      "properties": {
+        "weekly": {
+          "type": "object",
+          "description": "Map of weekday -> array of open intervals (24h HH:MM). Empty array = closed.",
+          "propertyNames": {
+            "enum": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["open", "close"],
+              "properties": {
+                "open": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+                "close": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" }
+              }
+            }
+          }
+        },
+        "holidays": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "label"],
+            "properties": {
+              "date": { "type": "string", "format": "date" },
+              "label": { "type": "string" },
+              "intervals": {
+                "type": "array",
+                "description": "Override hours for this date. Omit or empty = closed all day.",
+                "items": {
+                  "type": "object",
+                  "required": ["open", "close"],
+                  "properties": {
+                    "open": { "type": "string" },
+                    "close": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "afterHoursBehavior": {
+          "type": "string",
+          "enum": ["voicemail_summary", "emergency_triage", "schedule_callback", "answer_faq_only"]
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": ["contacts", "fallbackChain"],
+      "properties": {
+        "contacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "department"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+              "label": { "type": "string" },
+              "department": { "type": "string" },
+              "availability": {
+                "type": "string",
+                "enum": ["business_hours", "always", "weekdays_only"],
+                "default": "business_hours"
+              },
+              "transferStyle": {
+                "type": "string",
+                "enum": ["warm", "cold"],
+                "default": "warm"
+              }
+            }
+          }
+        },
+        "fallbackChain": {
+          "type": "array",
+          "description": "Ordered contact ids to try when a primary transfer fails.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "intent", "priority", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+          "name": { "type": "string" },
+          "intent": {
+            "type": "string",
+            "description": "Plain-language description of caller intent that triggers this scenario."
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Lower number = evaluated first. Resolves overlapping intents."
+          },
+          "triggers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Example utterances that should match this scenario."
+          },
+          "audience": {
+            "type": "object",
+            "properties": {
+              "include": { "type": "string" },
+              "exclude": { "type": "string" }
+            }
+          },
+          "onlyDuring": {
+            "type": "string",
+            "enum": ["open", "closed", "any"],
+            "default": "any"
+          },
+          "knowledgeRef": { "type": "string" },
+          "action": {
+            "type": "object",
+            "required": ["type"],
+            "oneOf": [
+              {
+                "properties": {
+                  "type": { "const": "capture_lead" },
+                  "fields": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["key", "prompt"],
+                      "properties": {
+                        "key": { "type": "string" },
+                        "prompt": { "type": "string", "description": "How the agent should ask for this field." },
+                        "required": { "type": "boolean", "default": false },
+                        "validate": { "type": "string", "enum": ["phone", "email", "date", "none"] }
+                      }
+                    }
+                  }
+                },
+                "required": ["type", "fields"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "schedule_appointment" },
+                  "calendarRef": { "type": "string" },
+                  "durationMinutes": { "type": "integer" },
+                  "bufferMinutes": { "type": "integer" }
+                },
+                "required": ["type", "calendarRef"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "transfer" },
+                  "contactId": { "type": "string" },
+                  "announcement": { "type": "string" }
+                },
+                "required": ["type", "contactId"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "send_followup" },
+                  "channel": { "type": "string", "enum": ["sms", "email", "both"] },
+                  "resourceUrl": { "type": "string", "format": "uri" },
+                  "note": { "type": "string" }
+                },
+                "required": ["type", "channel", "resourceUrl"]
+              },
+              {
+                "properties": {
+                  "type": { "const": "escalate" },
+                  "severity": { "type": "string", "enum": ["urgent", "emergency"] },
+                  "instructions": { "type": "string" }
+                },
+                "required": ["type", "severity", "instructions"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "properties": {
+        "prohibitedTopics": { "type": "array", "items": { "type": "string" } },
+        "complianceNotes": { "type": "array", "items": { "type": "string" } },
+        "neverDo": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

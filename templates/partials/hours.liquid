@@ -1,0 +1,18 @@
+<business_hours timezone="{{ business.timezone }}">
+Weekly schedule (all times {{ business.timezone }}):
+{%- assign days = "mon,tue,wed,thu,fri,sat,sun" | split: "," %}
+{%- for day in days %}
+{%- assign intervals = hours.weekly[day] %}
+- {{ day | day_name }}: {{ intervals | format_intervals }}
+{%- endfor %}
+{%- if hours.holidays and hours.holidays.size > 0 %}
+
+Holiday overrides:
+{%- for h in hours.holidays %}
+- {{ h.date }} ({{ h.label }}): {{ h.intervals | format_intervals }}
+{%- endfor %}
+{%- endif %}
+
+When the business is CLOSED, follow the after-hours policy: {{ hours.afterHoursBehavior | after_hours_guide }}
+Always determine open/closed state from the current call time before promising same-day help.
+</business_hours>

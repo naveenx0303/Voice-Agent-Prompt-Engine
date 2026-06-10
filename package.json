@@ -1,0 +1,35 @@
+{
+  "name": "voice-agent-prompt-engine",
+  "version": "1.0.0",
+  "description": "A config-driven prompt compilation engine for AI voice agents. Turns structured business configuration (scenarios, hours, routing, actions) into production-ready system prompts using LiquidJS template composition.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "vape": "src/cli.js"
+  },
+  "scripts": {
+    "build": "node src/cli.js --config examples/dental-clinic.json",
+    "build:hvac": "node src/cli.js --config examples/hvac-company.json",
+    "validate": "node src/cli.js --config examples/dental-clinic.json --validate-only",
+    "test": "node --test test/engine.test.js",
+    "snapshot": "node src/cli.js --config examples/dental-clinic.json --out dist/dental-clinic.prompt.txt"
+  },
+  "keywords": [
+    "prompt-engineering",
+    "liquidjs",
+    "voice-agent",
+    "ai-agents",
+    "templates",
+    "system-prompts"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "liquidjs": "^10.16.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
