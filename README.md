@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Voice Agent Prompt Engine
 
 A config-driven **prompt compilation engine** for AI voice agents. It turns structured business configuration — call-handling scenarios, business hours, contact routing, and action definitions — into production-ready system prompts using [LiquidJS](https://liquidjs.com/) template composition.
@@ -85,3 +86,7 @@ See `schema/config.schema.json` for the full contract and `examples/` for two co
 ## License
 
 MIT
+=======
+# Voice-Agent-Prompt-Engine
+An AI-powered prompt generation engine for voice agents that dynamically builds conversation instructions based on:  Scenario Selection Business Hours Contact Routing Action Selection Dynamic Variables LiquidJS Templates  The engine generates optimized prompts that voice AI systems can use to handle incoming customer calls.
+>>>>>>> 0e00ab6d43fc9d42a391911bc714a0808206de09
